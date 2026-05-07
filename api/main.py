@@ -7,10 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 app = FastAPI()
 
-# IMPORTANT : On autorise tout le monde à interroger l'API (nécessaire pour GitHub Pages)
+# Blindage CORS pour GitHub Pages
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -24,8 +25,8 @@ def get_con():
     return con
 
 @app.get("/")
-def health():
-    return {"status": "Enquête active", "storage": "Hugging Face Cloud"}
+async def root():
+    return {"status": "ONLINE", "investigation": "Transparence Toxique active"}
 
 @app.get("/api/v1/search")
 def search(q: str):
