@@ -6,6 +6,15 @@ __pycache__/
 # C extensions
 *.so
 
+
+data/
+.env
+*.duckdb
+__pycache__/
+.venv/
+
+
+
 # Distribution / packaging
 .Python
 build/
@@ -216,3 +225,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.env
+__pycache__/
+*.duckdb
+data/raw/
