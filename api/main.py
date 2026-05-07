@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 app = FastAPI()
 
-# Blindage CORS pour GitHub Pages
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,7 +23,8 @@ def get_con():
     con.execute("INSTALL httpfs; LOAD httpfs;")
     return con
 
-@app.get("/")
+# Correction : on accepte HEAD pour UptimeRobot et GET pour les humains
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"status": "ONLINE", "investigation": "Transparence Toxique active"}
 
