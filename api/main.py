@@ -27,16 +27,14 @@ LANDING_CACHE = {}
 @app.on_event("startup")
 def startup_event():
     global LANDING_CACHE
-    print("🚀 Chargement du Radar GPS en mémoire vive...")
+    print("🚀 Chargement du Scanner de Territoire...")
     
-    # On charge tout en RAM (les 23 Mo de search_medecins.parquet)
     db.execute(f"CREATE TABLE IF NOT EXISTS groups AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence_groups.parquet')")
     db.execute(f"CREATE TABLE IF NOT EXISTS regions AS SELECT * FROM read_parquet('{BASE_URL}/ref_regions.parquet')")
     db.execute(f"CREATE TABLE IF NOT EXISTS influence AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence.parquet')")
     db.execute(f"CREATE TABLE IF NOT EXISTS meds AS SELECT * FROM read_parquet('{BASE_URL}/labo_top_meds.parquet')")
     db.execute(f"CREATE TABLE IF NOT EXISTS search_data AS SELECT * FROM read_parquet('{BASE_URL}/search_medecins.parquet')")
     
-    # Pré-calcul des stats de la page d'accueil
     top_groups = db.execute("SELECT groupe, total_cadeaux_groupe FROM groups ORDER BY total_cadeaux_groupe DESC LIMIT 5").df().to_dict(orient="records")
     global_total = db.execute("SELECT SUM(total_cadeaux_groupe) FROM groups").fetchone()[0]
     
@@ -44,15 +42,13 @@ def startup_event():
         "top_groups": top_groups,
         "total_global": global_total
     }
-    print("✅ Radar armé. Latence : 0ms.")
+    print("✅ Radar 20KM armé.")
 
 @app.get("/")
-async def root():
-    return FileResponse('index.html')
+async def root(): return FileResponse('index.html')
 
 @app.get("/api/v1/landing-stats")
-def get_landing_stats():
-    return LANDING_CACHE
+def get_landing_stats(): return LANDING_CACHE
 
 @app.get("/api/v1/search")
 def search(q: str):
@@ -71,20 +67,17 @@ def search(q: str):
                 END as priority
             FROM search_data s
             JOIN regions r ON s.region_code = r.code
-            LEFT JOIN influence i 
-              ON s.labo_normalise = i.labo AND i.region = r.libelle_reg
-            LEFT JOIN meds m
-              ON s.labo_normalise = m.labo_ansm
+            LEFT JOIN influence i ON s.labo_normalise = i.labo AND i.region = r.libelle_reg
+            LEFT JOIN meds m ON s.labo_normalise = m.labo_ansm
             WHERE s.nom ILIKE '%{q}%' OR (s.ville ILIKE '{q}%' AND LENGTH('{q}') > 3)
         )
         SELECT * FROM raw_results ORDER BY priority ASC, montant_cumule DESC LIMIT 15
     """
-    res = db.execute(query).df().fillna(0)
-    return res.to_dict(orient="records")
+    return db.execute(query).df().fillna(0).to_dict(orient="records")
 
 @app.get("/api/v1/nearby")
 def nearby(lat: float, lon: float):
-    # Formule Haversine pour trouver les médecins à moins de 5km de l'utilisateur
+    # Scanner de territoire : rayon de 20km
     query = f"""
         SELECT 
             s.*,
@@ -97,9 +90,9 @@ def nearby(lat: float, lon: float):
         LEFT JOIN influence i ON s.labo_normalise = i.labo AND i.region = r.libelle_reg
         LEFT JOIN meds m ON s.labo_normalise = m.labo_ansm
         WHERE latitude IS NOT NULL
-        HAVING distance < 5
-        ORDER BY distance ASC, montant_cumule DESC
-        LIMIT 10
+        HAVING distance < 20  -- PASSAGE À 20 KM
+        ORDER BY montant_cumule DESC -- On priorise les plus gros dossiers du secteur
+        LIMIT 20
     """
     res = db.execute(query).df().fillna(0)
     return res.to_dict(orient="records")

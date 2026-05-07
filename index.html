@@ -111,7 +111,7 @@
             container.innerHTML = '<div class="text-center py-20 font-black text-red-600 animate-pulse text-2xl uppercase tracking-widest italic">BALAYAGE RADAR DU QUARTIER...</div>';
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const res = await fetch(`${API_BASE}/api/v1/nearby?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`).then(r => r.json());
-                container.innerHTML = res.length > 0 ? `<h2 class="text-red-600 font-black text-center mb-10 tracking-[0.5em] uppercase text-sm italic underline">Cibles détectées dans un rayon de 5km :</h2>` + res.map(renderDossier).join('') : '<p class="text-center text-stone-400 italic py-20">Zone blanche : aucun financement majeur détecté à 5km autour de vous.</p>';
+                container.innerHTML = res.length > 0 ? `<h2 class="text-red-600 font-black text-center mb-10 tracking-[0.5em] uppercase text-sm italic underline">Cibles détectées dans un rayon de 20km :</h2>` + res.map(renderDossier).join('') : '<p class="text-center text-stone-400 italic py-20">Zone blanche : aucun financement majeur détecté à 20km autour de vous.</p>';
             }, (err) => alert("Erreur GPS : Autorisez la localisation."));
         }
 
