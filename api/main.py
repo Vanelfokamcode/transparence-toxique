@@ -7,18 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 HF_USER = os.getenv("HF_USER", "pentagonaiee")
 BASE_URL = f"https://huggingface.co/datasets/{HF_USER}/transparence-toxique/resolve/main"
 
-# Connexion DuckDB persistante en RAM
 db = duckdb.connect(':memory:')
 db.execute("INSTALL httpfs; LOAD httpfs;")
 
@@ -27,72 +20,39 @@ LANDING_CACHE = {}
 @app.on_event("startup")
 def startup_event():
     global LANDING_CACHE
-    print("🚀 Chargement du Scanner de Territoire...")
+    print("🚀 Chargement du moteur d'audit...")
+    db.execute(f"CREATE TABLE search_data AS SELECT * FROM read_parquet('{BASE_URL}/search_medecins.parquet')")
+    db.execute(f"CREATE TABLE influence AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence.parquet')")
+    db.execute(f"CREATE TABLE meds AS SELECT * FROM read_parquet('{BASE_URL}/labo_top_meds.parquet')")
+    db.execute(f"CREATE TABLE regions AS SELECT * FROM read_parquet('{BASE_URL}/ref_regions.parquet')")
     
-    db.execute(f"CREATE TABLE IF NOT EXISTS groups AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence_groups.parquet')")
-    db.execute(f"CREATE TABLE IF NOT EXISTS regions AS SELECT * FROM read_parquet('{BASE_URL}/ref_regions.parquet')")
-    db.execute(f"CREATE TABLE IF NOT EXISTS influence AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence.parquet')")
-    db.execute(f"CREATE TABLE IF NOT EXISTS meds AS SELECT * FROM read_parquet('{BASE_URL}/labo_top_meds.parquet')")
-    db.execute(f"CREATE TABLE IF NOT EXISTS search_data AS SELECT * FROM read_parquet('{BASE_URL}/search_medecins.parquet')")
+    global_total = db.execute("SELECT SUM(montant_cumule) FROM search_data").fetchone()[0]
+    top_groups = db.execute("SELECT labo_source as groupe, SUM(montant_cumule) as total FROM search_data GROUP BY 1 ORDER BY 2 DESC LIMIT 5").df().to_dict(orient="records")
+    top_villes = db.execute("SELECT ville, SUM(montant_cumule) as total FROM search_data GROUP BY 1 ORDER BY 2 DESC LIMIT 5").df().to_dict(orient="records")
     
-    top_groups = db.execute("SELECT groupe, total_cadeaux_groupe FROM groups ORDER BY total_cadeaux_groupe DESC LIMIT 5").df().to_dict(orient="records")
-    global_total = db.execute("SELECT SUM(total_cadeaux_groupe) FROM groups").fetchone()[0]
-    
-    LANDING_CACHE = {
-        "top_groups": top_groups,
-        "total_global": global_total
-    }
-    print("✅ Radar 20KM armé.")
-
-@app.get("/")
-async def root(): return FileResponse('index.html')
-
-@app.get("/api/v1/landing-stats")
-def get_landing_stats(): return LANDING_CACHE
+    LANDING_CACHE = {"total_global": global_total, "top_groups": top_groups, "top_villes": top_villes}
+    print("✅ Moteur prêt.")
 
 @app.get("/api/v1/search")
 def search(q: str):
     query = f"""
-        WITH raw_results AS (
-            SELECT 
-                s.nom, s.prenom, s.ville, s.specialite, s.labo_source, s.montant_cumule,
-                COALESCE(i.roi_influence, 0) as roi,
-                COALESCE(i.pct_princeps, 0) as part_de_marche,
-                COALESCE(m.top_produits, 'traitements spécialisés') as medocs,
-                CASE 
-                    WHEN s.nom ILIKE '{q}' THEN 1
-                    WHEN s.nom ILIKE '{q}%' THEN 2
-                    WHEN s.ville ILIKE '{q}' THEN 3
-                    ELSE 4
-                END as priority
-            FROM search_data s
-            JOIN regions r ON s.region_code = r.code
-            LEFT JOIN influence i ON s.labo_normalise = i.labo AND i.region = r.libelle_reg
-            LEFT JOIN meds m ON s.labo_normalise = m.labo_ansm
-            WHERE s.nom ILIKE '%{q}%' OR (s.ville ILIKE '{q}%' AND LENGTH('{q}') > 3)
-        )
-        SELECT * FROM raw_results ORDER BY priority ASC, montant_cumule DESC LIMIT 15
+        SELECT 
+            s.*,
+            COALESCE(i.roi_influence, 0) as roi,
+            COALESCE(i.pct_princeps, 0) as part_de_marche,
+            COALESCE(m.top_produits, 'leurs traitements brevetés') as medocs
+        FROM search_data s
+        LEFT JOIN regions r ON s.region_code = r.code
+        LEFT JOIN influence i ON s.labo_normalise = i.labo AND i.region = r.libelle_reg
+        LEFT JOIN meds m ON s.labo_normalise = m.labo_ansm
+        WHERE s.nom ILIKE '%{q}%' OR s.ville ILIKE '%{q}%'
+        ORDER BY s.montant_cumule DESC
+        LIMIT 15
     """
     return db.execute(query).df().fillna(0).to_dict(orient="records")
 
-@app.get("/api/v1/nearby")
-def nearby(lat: float, lon: float):
-    # Scanner de territoire : rayon de 20km
-    query = f"""
-        SELECT 
-            s.*,
-            (6371 * acos(cos(radians({lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({lon})) + sin(radians({lat})) * sin(radians(latitude)))) AS distance,
-            COALESCE(i.roi_influence, 0) as roi,
-            COALESCE(i.pct_princeps, 0) as part_de_marche,
-            COALESCE(m.top_produits, 'traitements brevetés') as medocs
-        FROM search_data s
-        JOIN regions r ON s.region_code = r.code
-        LEFT JOIN influence i ON s.labo_normalise = i.labo AND i.region = r.libelle_reg
-        LEFT JOIN meds m ON s.labo_normalise = m.labo_ansm
-        WHERE latitude IS NOT NULL
-        HAVING distance < 20  -- PASSAGE À 20 KM
-        ORDER BY montant_cumule DESC -- On priorise les plus gros dossiers du secteur
-        LIMIT 20
-    """
-    res = db.execute(query).df().fillna(0)
-    return res.to_dict(orient="records")
+@app.get("/api/v1/landing-stats")
+def get_landing_stats(): return LANDING_CACHE
+
+@app.get("/")
+async def root(): return FileResponse('index.html')

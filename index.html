@@ -3,59 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transparence Toxique | Radar d'Investigation</title>
+    <title>Transparence Toxique | Audit National</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='black'/><path d='M30,30 Q30,10 50,10 L50,90 Q30,90 30,70 Z' fill='red'/><path d='M70,30 Q70,10 50,10 L50,90 Q70,90 70,70 Z' fill='white'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-stone-50 text-stone-900 pb-20 font-serif">
     <nav class="p-12 bg-black text-white border-b-8 border-red-600 shadow-2xl">
-        <div class="max-w-4xl mx-auto text-center md:text-left">
+        <div class="max-w-4xl mx-auto">
             <h1 class="text-6xl md:text-8xl font-black tracking-tighter uppercase italic leading-none">Transparence <br><span class="text-red-600 underline">Toxique</span></h1>
             <div class="mt-10 bg-stone-900 p-8 border-l-4 border-red-600">
-                <h2 class="text-xl font-bold text-white mb-4 uppercase tracking-widest italic">Le Manifeste :</h2>
-                <p class="text-stone-400 text-lg leading-relaxed font-light">
-                    Chaque année, les laboratoires versent des millions d'euros aux médecins. Est-ce que cet argent influence vos ordonnances ? 
-                    <span class="text-white font-bold underline">Activez le radar</span> pour voir qui est financé dans votre quartier.
-                </p>
+                <h2 class="text-xl font-bold text-white mb-4 uppercase tracking-widest italic">Le but de cette enquête :</h2>
+                <div class="text-stone-400 space-y-4 text-lg leading-relaxed font-light italic">
+                    <p>Chaque année, les laboratoires versent des millions d'euros aux médecins. Est-ce que cet argent influence vos ordonnances ?</p>
+                    <p>Nous avons croisé la base <span class="text-red-500 font-mono">Transparence Santé</span> avec les remboursements de la <span class="text-red-500 font-mono text-xs">Sécurité Sociale</span> pour révéler l'impact financier réel dans votre ville.</p>
+                </div>
             </div>
-            <p id="global-amount" class="text-sm font-mono mt-6 text-red-600 font-black tracking-widest uppercase italic">INITIALISATION DU SCAN...</p>
+            <p id="global-amount" class="text-sm font-mono mt-6 text-red-600 font-black tracking-widest uppercase italic">SCAN EN COURS...</p>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-6 mt-16 text-center">
-        <!-- BOUTON RADAR -->
-        <section class="mb-20 bg-white p-12 shadow-2xl border-4 border-red-600 inline-block w-full">
-            <h2 class="text-sm font-black uppercase mb-6 text-red-600 tracking-[0.4em]">Radar de proximité (5 km) :</h2>
-            <button onclick="startRadar()" id="radar-btn" class="bg-red-600 text-white px-10 py-6 rounded-full font-black text-2xl hover:bg-red-700 transition-all shadow-[0_0_30px_rgba(220,38,38,0.4)] flex items-center gap-4 mx-auto group">
-                <span class="relative flex h-6 w-6">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-6 w-6 bg-white"></span>
-                </span>
-                SCANNER MON QUARTIER
-            </button>
-            <p class="text-stone-400 text-xs mt-6 font-mono uppercase italic">Nécessite l'autorisation de géolocalisation</p>
-        </section>
-
-        <!-- RECHERCHE MANUELLE -->
-        <section class="bg-white p-12 shadow-xl border border-stone-200 mb-24 text-left">
-            <h2 class="text-xs font-black uppercase mb-6 text-stone-400 tracking-widest italic">Recherche manuelle par nom :</h2>
+    <main class="max-w-3xl mx-auto px-6 mt-16">
+        <div class="bg-white p-12 shadow-xl border border-stone-200 mb-20">
+            <h2 class="text-xs font-black uppercase mb-6 text-red-600 tracking-widest">Scanner un médecin ou un hôpital :</h2>
             <div class="flex gap-4">
-                <input type="text" id="search-input" placeholder="TAPEZ UN NOM..." class="flex-1 bg-stone-100 border-b-4 border-stone-300 p-4 text-3xl font-bold focus:border-red-600 outline-none">
-                <button onclick="searchManual()" class="bg-black text-white px-8 font-black hover:bg-red-600 uppercase italic">Vérifier</button>
+                <input type="text" id="search-input" placeholder="NOM OU VILLE..." class="flex-1 bg-stone-100 border-b-4 border-stone-300 p-4 text-3xl font-bold focus:border-red-600 outline-none">
+                <button onclick="search()" class="bg-black text-white px-10 font-black hover:bg-red-600 transition-colors uppercase italic text-xl">Scanner</button>
             </div>
-        </section>
+        </div>
 
-        <div id="results" class="space-y-32 text-left">
-            <!-- Stats par défaut -->
-            <div id="landing-stats" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div id="results" class="space-y-32">
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-8" id="landing-stats">
                 <div class="bg-white p-8 border border-stone-200 shadow-sm">
-                    <h3 class="text-[10px] font-black uppercase text-stone-400 mb-6 tracking-widest italic border-b pb-2">Top Empires Financeurs</h3>
+                    <h3 class="text-[10px] font-black uppercase text-stone-400 mb-6 tracking-widest italic border-b pb-2">Les plus gros financeurs</h3>
                     <div id="top-groups" class="space-y-4"></div>
                 </div>
-                <div class="bg-white p-8 border border-stone-200 shadow-sm text-center flex flex-col justify-center">
-                    <p class="text-stone-400 italic">Entrez un nom ou activez le radar pour voir les rapports d'impact.</p>
+                <div class="bg-white p-8 border border-stone-200 shadow-sm">
+                    <h3 class="text-[10px] font-black uppercase text-stone-400 mb-6 tracking-widest italic border-b pb-2">Villes sous influence</h3>
+                    <div id="top-villes" class="space-y-4"></div>
                 </div>
-            </div>
+            </section>
         </div>
     </main>
 
@@ -69,18 +55,27 @@
                 const response = await fetch(`${API_BASE}/api/v1/landing-stats`);
                 const data = await response.json();
                 document.getElementById('global-amount').innerText = "AUDIT SUR " + formatM(data.total_global) + " DE FINANCEMENTS ANALYSÉS";
-                document.getElementById('top-groups').innerHTML = data.top_groups.map(g => `<div class="flex justify-between border-b pb-1 text-sm font-bold uppercase"><span>${g.groupe}</span><span class="text-red-600">${formatM(g.total_cadeaux_groupe)}</span></div>`).join('');
+                document.getElementById('top-groups').innerHTML = data.top_groups.map(g => `<div class="flex justify-between border-b pb-1 text-xs font-bold uppercase"><span>${g.groupe}</span><span class="text-red-600">${formatM(g.total)}</span></div>`).join('');
+                document.getElementById('top-villes').innerHTML = data.top_villes.map(v => `<div class="flex justify-between border-b pb-1 text-xs font-bold uppercase"><span>${v.ville}</span><span class="text-red-600">${formatM(v.total)}</span></div>`).join('');
             } catch (e) { document.getElementById('global-amount').innerText = "SERVEUR EN VEILLE - RESSAYEZ DANS 30S"; }
         }
 
-        function renderDossier(r) {
-            const roi = Math.round(r.roi);
-            const dist = r.distance ? `<span class="bg-red-600 text-white px-2 py-0.5 text-[10px] ml-4">À ${r.distance.toFixed(1)} KM</span>` : '';
-            return `
+        async function search() {
+            const q = document.getElementById('search-input').value;
+            if (q.length < 2) return;
+            const container = document.getElementById('results');
+            container.innerHTML = '<div class="text-center py-20 font-black text-red-600 animate-pulse text-2xl uppercase tracking-widest italic">DÉCRYPTAGE DU DOSSIER...</div>';
+
+            const res = await fetch(`${API_BASE}/api/v1/search?q=${encodeURIComponent(q)}`).then(r => r.json());
+            container.innerHTML = '';
+
+            res.forEach(r => {
+                const roi = Math.round(r.roi);
+                container.innerHTML += `
                 <section class="bg-white p-12 shadow-2xl border-l-[24px] border-black">
-                    <div class="mb-12 border-b-2 border-stone-100 pb-8">
-                        <span class="bg-red-600 text-white px-2 py-1 text-[10px] font-black uppercase tracking-tighter">DOSSIER D'INFLUENCE N°${Math.floor(Math.random()*9000)}</span>
-                        <h3 class="text-6xl font-black tracking-tighter uppercase mt-4 leading-none">${r.nom} ${r.prenom} ${dist}</h3>
+                    <div class="mb-12 border-b-2 border-stone-100 pb-8 relative">
+                        <span class="bg-red-600 text-white px-2 py-1 text-[10px] font-black uppercase tracking-tighter">DOSSIER D'IMPACT</span>
+                        <h3 class="text-6xl font-black tracking-tighter uppercase mt-4 leading-none">${r.nom} ${r.prenom}</h3>
                         <p class="text-2xl text-stone-400 font-bold uppercase italic">${r.ville} — ${r.specialite || 'Institution'}</p>
                     </div>
                     <div class="text-2xl leading-relaxed text-stone-800 space-y-10">
@@ -89,32 +84,14 @@
                             <div class="bg-red-50 p-10 border-l-8 border-red-600 italic shadow-inner">
                                 <p class="text-red-900 leading-tight">"C'est un investissement en or : pour chaque euro versé ici, la collectivité rembourse au laboratoire <span class="text-red-600 font-black text-5xl">${roi} €</span> de médicaments de marque dans cette région."</p>
                             </div>
-                            <p class="text-xl">Conséquence : <span class="font-black text-red-600">${Math.round(r.part_de_marche)}%</span> des ventes du labo dans la zone sont ses produits de marque (<span class="italic font-bold text-stone-600">${r.medocs}</span>).</p>
-                        ` : `<div class="bg-stone-100 p-8 text-stone-500 text-lg italic border-dashed border-2 border-stone-300">Note : Ce financement concerne la recherche ou des essais cliniques. Impact direct non encore indexé.</div>`}
+                            <p class="text-xl">Conséquence : <span class="font-black text-red-600">${Math.round(r.part_de_marche)}%</span> des prescriptions du labo dans la zone sont ses produits de marque (<span class="italic font-bold text-stone-600">${r.medocs}</span>).</p>
+                        ` : `<div class="bg-stone-100 p-8 text-stone-500 text-lg italic border-dashed border-2 border-stone-300">Note : Ce financement concerne la recherche. L'influence directe sur les prescriptions n'est pas encore indexée.</div>`}
                         <div class="pt-10"><p class="text-4xl font-black text-red-600 italic tracking-tighter uppercase">Simple Coïncidence ?</p></div>
                     </div>
                 </section>`;
+            });
+            window.scrollTo({ top: container.offsetTop - 50, behavior: 'smooth' });
         }
-
-        async function searchManual() {
-            const q = document.getElementById('search-input').value;
-            if (q.length < 2) return;
-            const container = document.getElementById('results');
-            container.innerHTML = '<div class="text-center py-20 font-black text-red-600 animate-pulse text-2xl uppercase tracking-widest italic">INTERROGATION DU LAC DE DONNÉES...</div>';
-            const res = await fetch(`${API_BASE}/api/v1/search?q=${encodeURIComponent(q)}`).then(r => r.json());
-            container.innerHTML = res.length > 0 ? res.map(renderDossier).join('') : '<p class="text-center text-stone-400 italic py-20">Aucun dossier trouvé pour ce nom.</p>';
-        }
-
-        async function startRadar() {
-            if (!navigator.geolocation) return alert("GPS non supporté.");
-            const container = document.getElementById('results');
-            container.innerHTML = '<div class="text-center py-20 font-black text-red-600 animate-pulse text-2xl uppercase tracking-widest italic">BALAYAGE RADAR DU QUARTIER...</div>';
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const res = await fetch(`${API_BASE}/api/v1/nearby?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`).then(r => r.json());
-                container.innerHTML = res.length > 0 ? `<h2 class="text-red-600 font-black text-center mb-10 tracking-[0.5em] uppercase text-sm italic underline">Cibles détectées dans un rayon de 20km :</h2>` + res.map(renderDossier).join('') : '<p class="text-center text-stone-400 italic py-20">Zone blanche : aucun financement majeur détecté à 20km autour de vous.</p>';
-            }, (err) => alert("Erreur GPS : Autorisez la localisation."));
-        }
-
         init();
     </script>
 </body>
