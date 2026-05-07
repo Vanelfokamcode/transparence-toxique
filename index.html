@@ -66,9 +66,17 @@
             return (amount / 1e6).toFixed(1).replace('.', ',') + " M€";
         }
 
+        // Dans index.html, remplace la fonction init() par celle-ci
         async function init() {
+            // On affiche un loader spécifique pour les stats
+            const loader = '<span class="animate-pulse text-stone-400 italic text-xs">Analyse en cours...</span>';
+            document.getElementById('top-groups').innerHTML = loader;
+            document.getElementById('top-villes').innerHTML = loader;
+
             try {
-                const data = await fetch(`${API_BASE}/api/v1/landing-stats`).then(r => r.json());
+                const response = await fetch(`${API_BASE}/api/v1/landing-stats`);
+                const data = await response.json();
+                
                 document.getElementById('global-amount').innerText = "AUDIT SUR " + formatM(data.total_global) + " DE FINANCEMENTS ANALYSÉS";
                 
                 document.getElementById('top-groups').innerHTML = data.top_groups.map(g => `
@@ -85,7 +93,7 @@
                     </div>
                 `).join('');
             } catch (e) {
-                console.error("Erreur de connexion à l'API", e);
+                document.getElementById('global-amount').innerText = "ERREUR DE CONNEXION AU SERVEUR";
             }
         }
 

@@ -18,22 +18,36 @@ app.add_middleware(
 HF_USER = os.getenv("HF_USER", "pentagonaiee")
 BASE_URL = f"https://huggingface.co/datasets/{HF_USER}/transparence-toxique/resolve/main"
 
-# --- CACHE EN MÉMOIRE ---
-# On crée une connexion DuckDB persistante en RAM pour toute la durée de vie de l'API
+# Connexion DuckDB persistante en RAM
 db = duckdb.connect(':memory:')
 db.execute("INSTALL httpfs; LOAD httpfs;")
 
+# Variable pour stocker les stats de la page d'accueil
+LANDING_CACHE = {}
+
 @app.on_event("startup")
 def startup_event():
-    print("🚀 Chargement des preuves en mémoire vive...")
-    # On charge les petites tables vitales en RAM une bonne fois pour toutes
-    db.execute(f"CREATE TABLE IF NOT EXISTS groups AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence_groups.parquet')")
-    db.execute(f"CREATE TABLE IF NOT EXISTS regions AS SELECT * FROM read_parquet('{BASE_URL}/ref_regions.parquet')")
-    db.execute(f"CREATE TABLE IF NOT EXISTS influence AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence.parquet')")
-    db.execute(f"CREATE TABLE IF NOT EXISTS meds AS SELECT * FROM read_parquet('{BASE_URL}/labo_top_meds.parquet')")
-    # Pour la recherche, on charge aussi (ça ne fait que 1.2 Mo, c'est rien pour 512 Mo de RAM)
-    db.execute(f"CREATE TABLE IF NOT EXISTS search_data AS SELECT * FROM read_parquet('{BASE_URL}/search_medecins.parquet')")
-    print("✅ RAM prête. Latence éliminée.")
+    global LANDING_CACHE
+    print("🚀 Nitro-Chargement des données...")
+    
+    # 1. Chargement en RAM
+    db.execute(f"CREATE TABLE groups AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence_groups.parquet')")
+    db.execute(f"CREATE TABLE regions AS SELECT * FROM read_parquet('{BASE_URL}/ref_regions.parquet')")
+    db.execute(f"CREATE TABLE influence AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence.parquet')")
+    db.execute(f"CREATE TABLE meds AS SELECT * FROM read_parquet('{BASE_URL}/labo_top_meds.parquet')")
+    db.execute(f"CREATE TABLE search_data AS SELECT * FROM read_parquet('{BASE_URL}/search_medecins.parquet')")
+    
+    # 2. Pré-calcul des stats de la page d'accueil
+    top_groups = db.execute("SELECT groupe, total_cadeaux_groupe FROM groups ORDER BY total_cadeaux_groupe DESC LIMIT 5").df().to_dict(orient="records")
+    top_villes = db.execute("SELECT ville, SUM(montant_cumule) as total FROM search_data GROUP BY 1 ORDER BY 2 DESC LIMIT 5").df().to_dict(orient="records")
+    global_total = db.execute("SELECT SUM(total_cadeaux_groupe) FROM groups").fetchone()[0]
+    
+    LANDING_CACHE = {
+        "top_groups": top_groups,
+        "top_villes": top_villes,
+        "total_global": global_total
+    }
+    print("✅ Nitro-Cache prêt. Latence supprimée.")
 
 @app.get("/")
 async def root():
@@ -41,20 +55,12 @@ async def root():
 
 @app.get("/api/v1/landing-stats")
 def get_landing_stats():
-    # Ici, on requête la table en RAM (instantané)
-    top_groups = db.execute("SELECT groupe, total_cadeaux_groupe FROM groups ORDER BY total_cadeaux_groupe DESC LIMIT 5").df()
-    top_villes = db.execute("SELECT ville, SUM(montant_cumule) as total FROM search_data GROUP BY 1 ORDER BY 2 DESC LIMIT 5").df()
-    global_total = db.execute("SELECT SUM(total_cadeaux_groupe) FROM groups").fetchone()[0]
-    
-    return {
-        "top_groups": top_groups.to_dict(orient="records"),
-        "top_villes": top_villes.to_dict(orient="records"),
-        "total_global": global_total
-    }
+    # Réponse instantanée (< 1ms)
+    return LANDING_CACHE
 
 @app.get("/api/v1/search")
 def search(q: str):
-    # Requête ultra-rapide sur la RAM
+    # La recherche reste rapide car elle tape dans la RAM
     query = f"""
         WITH raw_results AS (
             SELECT 
