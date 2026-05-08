@@ -2,77 +2,51 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transparence Toxique | Audit National</title>
-    
-    <!-- FAVICON SVG (Pillule Rouge) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='black'/><path d='M30,30 Q30,10 50,10 L50,90 Q30,90 30,70 Z' fill='red'/><path d='M70,30 Q70,10 50,10 L50,90 Q70,90 70,70 Z' fill='white'/></svg>">
-    
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-stone-50 text-stone-900 pb-20 font-serif">
-
-    <!-- HEADER ET MANIFESTE -->
+    <!-- MANIFESTE ET HEADER -->
     <nav class="p-12 bg-black text-white border-b-8 border-red-600 shadow-2xl">
         <div class="max-w-4xl mx-auto">
-            <h1 class="text-6xl md:text-8xl font-black tracking-tighter uppercase italic leading-none">
-                Transparence <br><span class="text-red-600 underline">Toxique</span>
-            </h1>
+            <h1 class="text-6xl md:text-8xl font-black tracking-tighter uppercase italic leading-none">Transparence <br><span class="text-red-600 underline">Toxique</span></h1>
             
             <div class="mt-10 bg-stone-900 p-8 border-l-4 border-red-600">
-                <h2 class="text-xl font-bold text-white mb-4 uppercase tracking-widest italic">Le Manifeste :</h2>
-                <div class="text-stone-400 space-y-4 text-lg leading-relaxed font-light italic">
-                    <p>
-                        Chaque année, les laboratoires pharmaceutiques versent des fortunes aux médecins et hôpitaux français. 
-                        <span class="text-white font-bold">Est-ce que cet argent influence ce qu'on vous prescrit ?</span>
-                    </p>
-                    <p>
-                        Nous avons croisé la base <span class="text-red-500 font-mono italic">Transparence Santé</span> avec les remboursements de la <span class="text-red-500 font-mono italic">Sécurité Sociale</span>. 
-                        Le verdict est sans appel.
-                    </p>
+                <h2 class="text-xl font-bold text-white mb-4 uppercase tracking-widest italic text-red-500">Le but de cette enquête :</h2>
+                <div class="text-stone-400 space-y-4 text-lg leading-relaxed font-light">
+                    <p>Chaque année, les laboratoires pharmaceutiques versent des millions d'euros aux médecins et hôpitaux français. <span class="text-white font-bold italic underline">Est-ce que cet argent influence ce qu'on vous prescrit ?</span></p>
+                    <p>Nous avons croisé la base officielle <span class="text-red-500 font-mono italic">Transparence Santé</span> avec les remboursements de la <span class="text-red-500 font-mono italic">Sécurité Sociale</span>. Le résultat montre comment l'investissement marketing dicte le choix de vos médicaments.</p>
                 </div>
             </div>
-            <!-- LE CHIFFRE CHOC EN MILLIARDS -->
-            <p id="global-amount" class="text-xl font-mono mt-8 text-red-600 font-black tracking-widest uppercase italic border-y border-red-900 py-4 inline-block">
-                INITIALISATION DU SCAN...
-            </p>
+            <p id="global-amount" class="text-xl font-mono mt-8 text-red-600 font-black tracking-widest uppercase italic border-y border-red-900 py-4 inline-block">SCAN DES ARCHIVES EN COURS...</p>
         </div>
     </nav>
 
-    <main class="max-w-3xl mx-auto px-6 mt-16">
-        
-        <!-- BARRE DE SCANNER -->
+    <div class="max-w-3xl mx-auto px-6 mt-16">
+        <!-- RECHERCHE -->
         <div class="bg-white p-12 shadow-xl border border-stone-200 mb-20">
             <h2 class="text-xs font-black uppercase mb-6 text-red-600 tracking-widest">Scanner un médecin ou un établissement :</h2>
             <div class="flex gap-4">
-                <input type="text" id="search-input" placeholder="NOM OU VILLE..." 
-                       class="flex-1 bg-stone-100 border-b-4 border-stone-300 p-4 text-3xl font-bold focus:border-red-600 outline-none">
-                <button onclick="search()" class="bg-black text-white px-10 font-black hover:bg-red-600 transition-colors uppercase italic text-xl">VÉRIFIER</button>
+                <input type="text" id="search-input" placeholder="NOM OU VILLE..." class="flex-1 bg-stone-100 border-b-4 border-stone-300 p-4 text-3xl font-bold focus:border-red-600 outline-none">
+                <button onclick="search()" class="bg-black text-white px-10 font-black hover:bg-red-600 transition-colors uppercase italic text-xl">Vérifier</button>
             </div>
         </div>
 
         <!-- ZONE DE RÉSULTATS -->
         <div id="results" class="space-y-32">
-            <section class="grid grid-cols-1 md:grid-cols-2 gap-8" id="landing-stats">
-                <div class="bg-white p-6 border border-stone-200 shadow-sm">
-                    <h3 class="text-[10px] font-black uppercase text-stone-400 mb-4 tracking-widest italic border-b pb-2">Les plus gros financeurs</h3>
-                    <div id="top-groups" class="space-y-3"></div>
-                </div>
-                <div class="bg-white p-6 border border-stone-200 shadow-sm text-center flex flex-col justify-center">
-                    <p class="text-stone-400 italic">Entrez un nom pour accéder aux pièces à conviction.</p>
-                </div>
+            <section class="bg-white p-8 border border-stone-200 shadow-sm" id="landing-stats">
+                <h3 class="text-[10px] font-black uppercase text-stone-400 mb-4 tracking-widest italic border-b pb-2">Top Financeurs (Influence cumulée)</h3>
+                <div id="top-groups" class="space-y-3"></div>
             </section>
         </div>
-    </main>
+    </div>
 
     <script>
         const API_BASE = "https://transparence-toxique-api.onrender.com";
 
-        // FONCTION MAGIQUE POUR LES MILLIARDS
-        function formatImpact(amount) {
-            if (amount >= 1e9) {
-                return (amount / 1e9).toFixed(1).replace('.', ',') + " Milliards d'euros";
-            }
+        function formatM(amount) {
+            if (amount >= 1e9) return (amount / 1e9).toFixed(1).replace('.', ',') + " Milliards d'euros";
             return (amount / 1e6).toFixed(1).replace('.', ',') + " M€";
         }
 
@@ -80,81 +54,43 @@
             try {
                 const response = await fetch(`${API_BASE}/api/v1/landing-stats`);
                 const data = await response.json();
-                
-                // On affiche le montant en Milliards dans le header
-                document.getElementById('global-amount').innerText = "AUDIT SUR " + formatImpact(data.total_global).toUpperCase() + " ANALYSÉS";
-                
-                document.getElementById('top-groups').innerHTML = data.top_groups.map(g => `
-                    <div class="flex justify-between border-b pb-1 text-xs font-bold uppercase">
-                        <span>${g.groupe}</span>
-                        <span class="text-red-600">${formatImpact(g.total_cadeaux_groupe)}</span>
-                    </div>
-                `).join('');
-            } catch (e) {
-                document.getElementById('global-amount').innerText = "SERVEUR EN VEILLE - RÉESSAYEZ DANS 30s";
-            }
+                document.getElementById('global-amount').innerText = "AUDIT SUR " + formatM(data.total_global).toUpperCase() + " ANALYSÉS";
+                document.getElementById('top-groups').innerHTML = data.top_groups.map(g => `<div class="flex justify-between border-b pb-1 text-xs font-bold uppercase"><span>${g.groupe}</span><span class="text-red-600">${formatM(g.total)}</span></div>`).join('');
+            } catch (e) { document.getElementById('global-amount').innerText = "SERVEUR EN VEILLE - RÉESSAYEZ DANS 30s"; }
         }
 
         async function search() {
             const q = document.getElementById('search-input').value;
             if (q.length < 2) return;
             const container = document.getElementById('results');
-            container.innerHTML = '<div class="text-center py-20 font-black text-red-600 animate-pulse text-2xl uppercase tracking-widest italic">OUVERTURE DU DOSSIER...</div>';
+            container.innerHTML = '<div class="text-center py-20 font-black text-red-600 animate-pulse text-2xl uppercase tracking-widest italic">DÉCRYPTAGE DU DOSSIER...</div>';
 
             const res = await fetch(`${API_BASE}/api/v1/search?q=${encodeURIComponent(q)}`).then(r => r.json());
             container.innerHTML = '';
 
-            if (res.length === 0) {
-                container.innerHTML = '<p class="text-center text-stone-400 italic py-20">Aucune trace de financement massif trouvée.</p>';
-                return;
-            }
-
             res.forEach(r => {
                 const roi = Math.round(r.roi);
                 container.innerHTML += `
-                    <section class="bg-white p-12 shadow-2xl border-l-[24px] border-black animate-in fade-in duration-700">
-                        <div class="mb-12 border-b-2 border-stone-100 pb-8 relative">
-                            <span class="bg-red-600 text-white px-2 py-1 text-[10px] font-black uppercase tracking-tighter tracking-widest">DOSSIER D'INFLUENCE</span>
-                            <h3 class="text-6xl font-black tracking-tighter uppercase mt-4 leading-none">${r.nom} ${r.prenom}</h3>
-                            <p class="text-2xl text-stone-400 font-bold uppercase italic">${r.ville} — ${r.specialite || 'Institution'}</p>
-                        </div>
-
-                        <div class="text-2xl leading-relaxed text-stone-800 space-y-10">
-                            <p>
-                                Cet acteur a perçu un financement de <span class="font-black text-red-600 underline decoration-red-600 decoration-4">${Math.round(r.montant_cumule).toLocaleString('fr-FR')} €</span> 
-                                de la part du laboratoire <span class="font-black uppercase">${r.labo_source}</span>.
-                            </p>
-
-                            ${roi > 0 ? `
-                                <div class="bg-stone-50 p-10 border-l-8 border-red-600 italic shadow-inner">
-                                    <p class="text-red-900 leading-tight">
-                                        "L'investissement est extrêmement rentable : pour chaque euro versé ici, 
-                                        la collectivité rembourse au laboratoire <span class="text-red-600 font-black text-5xl">${roi} €</span> 
-                                        de médicaments de marque dans cette région."
-                                    </p>
-                                </div>
-
-                                <p class="text-xl">
-                                    Conséquence directe : dans ce secteur, <span class="font-black text-red-600">${Math.round(r.part_de_marche)}%</span> des prescriptions 
-                                    du labo concernent ses produits de marque (ex: <span class="italic font-bold text-stone-600">${r.medocs}</span>), 
-                                    au détriment des génériques.
-                                </p>
-                            ` : `
-                                <div class="bg-stone-100 p-8 text-stone-500 text-lg italic border-dashed border-2 border-stone-300">
-                                    Note : Ce financement concerne la recherche. L'influence directe sur les ordonnances n'est pas encore indexée.
-                                </div>
-                            `}
-
-                            <div class="pt-10 flex justify-between items-center opacity-50">
-                                <p class="text-4xl font-black text-red-600 italic tracking-tighter uppercase">Simple Coïncidence ?</p>
+                <section class="bg-white p-12 shadow-2xl border-l-[24px] border-black">
+                    <div class="mb-12 border-b-2 border-stone-100 pb-8 relative">
+                        <span class="bg-red-600 text-white px-2 py-1 text-[10px] font-black uppercase tracking-tighter">DOSSIER D'INFLUENCE</span>
+                        <h3 class="text-6xl font-black tracking-tighter uppercase mt-4 leading-none">${r.nom} ${r.prenom && r.prenom !== 'null' ? r.prenom : ''}</h3>
+                        <p class="text-2xl text-stone-400 font-bold uppercase italic">${r.ville} — ${r.specialite || 'Institution'}</p>
+                    </div>
+                    <div class="text-2xl leading-relaxed text-stone-800 space-y-10">
+                        <p>Cet acteur a perçu un financement cumulé de <span class="font-black text-red-600 underline decoration-red-600 decoration-4">${Math.round(r.montant_total).toLocaleString('fr-FR')} €</span> de la part du laboratoire <span class="font-black uppercase">${r.labo_source}</span>.</p>
+                        ${roi > 0 ? `
+                            <div class="bg-red-50 p-10 border-l-8 border-red-600 italic shadow-inner">
+                                <p class="text-red-900 leading-tight">"C'est un investissement en or : pour chaque euro versé ici, la collectivité rembourse au laboratoire <span class="text-red-600 font-black text-5xl">${roi} €</span> de médicaments de marque dans cette région."</p>
                             </div>
-                        </div>
-                    </section>
-                `;
+                            <p class="text-xl">Conséquence directe : dans cette zone, <span class="font-black text-red-600">${Math.round(r.part_de_marche)}%</span> des prescriptions du laboratoire concernent ses produits de marque (ex: <span class="italic font-bold text-stone-600">${r.medocs}</span>), au détriment des alternatives génériques économiques.</p>
+                        ` : `<div class="bg-stone-100 p-8 text-stone-500 text-lg italic border-dashed border-2 border-stone-300">Note : Ce financement concerne la recherche. L'impact direct sur les prescriptions régionales n'est pas encore indexé pour ce laboratoire spécifique.</div>`}
+                        <div class="pt-10"><p class="text-4xl font-black text-red-600 italic tracking-tighter uppercase">Simple Coïncidence ?</p></div>
+                    </div>
+                </section>`;
             });
             window.scrollTo({ top: container.offsetTop - 50, behavior: 'smooth' });
         }
-
         init();
     </script>
 </body>
