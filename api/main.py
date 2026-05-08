@@ -20,19 +20,20 @@ LANDING_CACHE = {}
 @app.on_event("startup")
 def startup_event():
     global LANDING_CACHE
-    print("🚀 Chargement du moteur d'audit...")
-    db.execute(f"CREATE TABLE search_data AS SELECT * FROM read_parquet('{BASE_URL}/search_medecins.parquet')")
-    db.execute(f"CREATE TABLE influence AS SELECT * FROM read_parquet('{BASE_URL}/fact_influence.parquet')")
-    db.execute(f"CREATE TABLE meds AS SELECT * FROM read_parquet('{BASE_URL}/labo_top_meds.parquet')")
-    db.execute(f"CREATE TABLE regions AS SELECT * FROM read_parquet('{BASE_URL}/ref_regions.parquet')")
+    # ... (chargement des tables) ...
     
-    global_total = db.execute("SELECT SUM(montant_cumule) FROM search_data").fetchone()[0]
-    top_groups = db.execute("SELECT labo_source as groupe, SUM(montant_cumule) as total FROM search_data GROUP BY 1 ORDER BY 2 DESC LIMIT 5").df().to_dict(orient="records")
-    top_villes = db.execute("SELECT ville, SUM(montant_cumule) as total FROM search_data GROUP BY 1 ORDER BY 2 DESC LIMIT 5").df().to_dict(orient="records")
+    # On force le cast en FLOAT pour le JSON
+    res_groups = db.execute("SELECT labo_source as groupe, CAST(SUM(montant_cumule) AS FLOAT) as total FROM search_data GROUP BY 1 ORDER BY 2 DESC LIMIT 5").df()
+    top_groups = res_groups.to_dict(orient="records")
     
-    LANDING_CACHE = {"total_global": global_total, "top_groups": top_groups, "top_villes": top_villes}
-    print("✅ Moteur prêt.")
-
+    raw_total = db.execute("SELECT SUM(montant_cumule) FROM search_data").fetchone()[0]
+    global_total = float(raw_total) if raw_total else 0.0
+    
+    LANDING_CACHE = {
+        "top_groups": top_groups,
+        "total_global": global_total
+    }
+    
 @app.get("/api/v1/search")
 def search(q: str):
     query = f"""
